@@ -23,9 +23,15 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import OtpVerify from "react-native-otp-verify";
+// import OtpVerify from "react-native-otp-verify";
 import { SafeAreaView } from "react-native-safe-area-context";
 type Step = "MOBILE" | "OTP" | "REGISTER" | "SUCCESS";
+
+let OtpVerify: any = null;
+
+if (Platform.OS === "android") {
+  OtpVerify = require("react-native-otp-verify").default;
+}
 
 export default function AuthScreen() {
   const [step, setStep] = useState<Step>("MOBILE");

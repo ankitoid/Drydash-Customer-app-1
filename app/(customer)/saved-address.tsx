@@ -1,4 +1,4 @@
-import { deleteAddressApi, getAddressApi } from "@/features/orders/orders.api";
+import { deleteAddressApi, getAddressApi, saveAddressApi } from "@/features/orders/orders.api";
 import { useAuth } from "@/hooks/useAuth";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
@@ -17,9 +17,11 @@ import {
   Animated,
   BackHandler,
   Dimensions,
+  Modal,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -28,6 +30,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 /* ─────────── constants ─────────── */
 
 const { width } = Dimensions.get("window");
+
+
 
 const C = {
   bg: "#031612",
@@ -56,6 +60,8 @@ type Address = {
 };
 
 /* ─────────── map decoration ─────────── */
+
+
 
 function MapDecoration() {
   return (
@@ -184,7 +190,68 @@ export default function SavedAddresses() {
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [loading, setLoading] = useState(true);
 
+
+  const [addModalOpen, setAddModalOpen] = useState(false);
+
+const [addressForm, setAddressForm] = useState({
+  label: "home",
+  contactName: "",
+  contactPhone: "",
+  houseNo: "",
+  street: "",
+  addressLine2: "",
+  landmark: "",
+  city: "",
+  state: "",
+  pincode: "",
+  latitude: "",
+  longitude: "",
+});
+
   const headerFade = useRef(new Animated.Value(0)).current;
+
+  const saveAddress = async () => {
+  try {
+    const label =
+      addressForm.label === "home"
+        ? "Home"
+        : addressForm.label === "work"
+          ? "Office"
+          : "Other";
+
+    const payload = {
+      label,
+      addressLine1: `${addressForm.houseNo}, ${addressForm.street}`,
+      landmark: addressForm.landmark,
+      city: addressForm.city,
+      state: addressForm.state,
+      country: "India",
+      pincode: addressForm.pincode,
+      latitude: Number(addressForm.latitude || 0),
+      longitude: Number(addressForm.longitude || 0),
+      addressType: "PICKUP",
+    };
+
+    await saveAddressApi(payload);
+
+    setAddModalOpen(false);
+
+    const data = await getAddressApi(authId);
+    const list = Array.isArray(data?.results) ? data.results : [];
+
+    setAddresses(
+      list.map((a) => ({
+        id: String(a.id),
+        label: a.label,
+        addressLine1: a.addressLine1 ?? "",
+        city: a.city ?? "",
+        state: a.state ?? "",
+      }))
+    );
+  } catch (error) {
+    console.log(error);
+  }
+};
 
   useEffect(() => {
     Animated.timing(headerFade, {
@@ -308,7 +375,7 @@ export default function SavedAddresses() {
         <View style={styles.addBtnWrapper}>
           <TouchableOpacity
             activeOpacity={0.88}
-            onPress={() => router.push("/add-address")}
+            onPress={() => setAddModalOpen(true)}
             style={styles.addBtnOuter}
           >
             <LinearGradient
@@ -322,6 +389,99 @@ export default function SavedAddresses() {
             </LinearGradient>
           </TouchableOpacity>
         </View>
+
+        <Modal visible={addModalOpen} animationType="slide" transparent>
+          <View
+            style={{
+              flex: 1,
+              justifyContent: "flex-end",
+              backgroundColor: "rgba(0,0,0,0.5)",
+            }}
+          >
+            <View
+              style={{
+                backgroundColor: "#0F2318",
+                borderTopLeftRadius: 20,
+                borderTopRightRadius: 20,
+                padding: 20,
+              }}
+            >
+              <Text
+                style={{
+                  color: "#fff",
+                  fontSize: 18,
+                  fontWeight: "800",
+                  marginBottom: 20,
+                }}
+              >
+                Add New Address
+              </Text>
+
+              <TextInput
+                placeholder="House No"
+                placeholderTextColor="#666"
+               style={styles.input}
+                value={addressForm.houseNo}
+                onChangeText={(t) =>
+                  setAddressForm((p) => ({ ...p, houseNo: t }))
+                }
+              />
+
+              <TextInput
+                placeholder="Street"
+                placeholderTextColor="#666"
+               style={styles.input}
+                value={addressForm.street}
+                onChangeText={(t) =>
+                  setAddressForm((p) => ({ ...p, street: t }))
+                }
+              />
+
+              <TextInput
+                placeholder="City"
+                placeholderTextColor="#666"
+               style={styles.input}
+                value={addressForm.city}
+                onChangeText={(t) =>
+                  setAddressForm((p) => ({ ...p, city: t }))
+                }
+              />
+
+              <TextInput
+                placeholder="State"
+                placeholderTextColor="#666"
+               style={styles.input}
+                value={addressForm.state}
+                onChangeText={(t) =>
+                  setAddressForm((p) => ({ ...p, state: t }))
+                }
+              />
+
+              <TouchableOpacity
+                onPress={saveAddress}
+                style={{
+                  backgroundColor: C.primary,
+                  height: 50,
+                  borderRadius: 12,
+                  justifyContent: "center",
+                  alignItems: "center",
+                  marginTop: 20,
+                }}
+              >
+                <Text
+                  style={{
+                    color: "#031612",
+                    fontWeight: "800",
+                    fontSize: 16,
+                  }}
+                >
+                  Save Address
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+
       </SafeAreaView>
     </View>
   );
@@ -419,7 +579,16 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
   },
-
+  input: {
+    height: 50,
+    borderWidth: 1,
+    borderColor: "#1E3327",
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    color: "#fff",
+    marginBottom: 12,
+    backgroundColor: "#0A1A10",
+  },
   /* card */
   card: {
     backgroundColor: C.card,
