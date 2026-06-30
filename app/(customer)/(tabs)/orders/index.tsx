@@ -37,19 +37,27 @@ const normalizeStatusKey = (status: string) =>
 
 const getStatusConfig = (status: string, theme: any) => {
   const STATUS_CONFIG = {
-    active: { bg: "#3B82F6", icon: "time-outline" as const, label: "Active" },
-    transit: { bg: theme.background, icon: "bicycle-outline" as const, label: "Out For Delivery" },
-    delivered: {
-      bg: theme.primary,
-      icon: "checkmark-done-outline" as const,
-      label: "Delivered",
-    },
-    cancelled: {
-      bg: "#FF6B6B",
-      icon: "close-circle-outline" as const,
-      label: "Cancelled",
-    },
-  };
+  active: {
+    bg: theme.info,
+    icon: "time-outline" as const,
+    label: "Active",
+  },
+  transit: {
+    bg: theme.primary,
+    icon: "bicycle-outline" as const,
+    label: "Out For Delivery",
+  },
+  delivered: {
+    bg: theme.success,
+    icon: "checkmark-done-outline" as const,
+    label: "Delivered",
+  },
+  cancelled: {
+    bg: theme.error,
+    icon: "close-circle-outline" as const,
+    label: "Cancelled",
+  },
+};
 
   const key = normalizeStatusKey(status);
 
@@ -901,5 +909,6 @@ const makeStyles = (theme: any) => StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  emptyTitle: { fontSize: 18, fontWeight: "800", color: theme.text },
+  emptyTitle: { fontSize: 18, fontWeight: "800", color: "#fff" },
+  
 });

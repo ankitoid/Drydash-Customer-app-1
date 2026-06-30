@@ -46,6 +46,7 @@ import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "../../../context/ThemeContext";
 import { useChat } from "@/context/ChatContext";
+import { PERMISSIONS, request, RESULTS } from 'react-native-permissions';
 /* ─── palette (unchanged) ─── */
 // const C = {
 //   bg: "#021410",
@@ -435,6 +436,29 @@ export default function SupportChat() {
   }, [roomId]);
 
 
+const requestGalleryPermission = async () => {
+  const permission =
+    Platform.OS === 'ios'
+      ? PERMISSIONS.IOS.PHOTO_LIBRARY
+      : Platform.Version >= 33
+      ? PERMISSIONS.ANDROID.READ_MEDIA_IMAGES
+      : PERMISSIONS.ANDROID.READ_EXTERNAL_STORAGE;
+
+  const result = await request(permission);
+
+  return result === RESULTS.GRANTED;
+};
+
+const requestCameraPermission = async () => {
+  const permission =
+    Platform.OS === 'ios'
+      ? PERMISSIONS.IOS.CAMERA
+      : PERMISSIONS.ANDROID.CAMERA;
+
+  const result = await request(permission);
+
+  return result === RESULTS.GRANTED;
+};
 
   // preview image in the chat list 
   
@@ -631,15 +655,68 @@ export default function SupportChat() {
   }, [params.topic, roomId, customerId]);
 
   // ----- Image Upload Functions -----
-const requestPermissions = async (): Promise<boolean> => {
-  const { status: cameraStatus } = await ImagePicker.requestCameraPermissionsAsync();
-  const { status: mediaStatus } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-  if (cameraStatus !== 'granted' || mediaStatus !== 'granted') {
-    Alert.alert('Permission needed', 'Please allow access to camera and gallery.');
-    return false;
+
+  const requestPermissions = async () => {
+  try {
+    if (Platform.OS === "android") {
+      // Location
+      const location = await request(
+        PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION
+      );
+      console.log("Location:", location);
+
+      // Camera
+      const camera = await request(
+        PERMISSIONS.ANDROID.CAMERA
+      );
+      console.log("Camera:", camera);
+
+      // Gallery
+      if (Platform.Version >= 33) {
+        const gallery = await request(
+          PERMISSIONS.ANDROID.READ_MEDIA_IMAGES
+        );
+        console.log("Gallery:", gallery);
+      } else {
+        const gallery = await request(
+          PERMISSIONS.ANDROID.READ_EXTERNAL_STORAGE
+        );
+        console.log("Gallery:", gallery);
+      }
+
+    } else {
+      // Location
+      const location = await request(
+        PERMISSIONS.IOS.LOCATION_WHEN_IN_USE
+      );
+      console.log("Location:", location);
+
+      // Camera
+      const camera = await request(
+        PERMISSIONS.IOS.CAMERA
+      );
+      console.log("Camera:", camera);
+
+      // Gallery
+      const gallery = await request(
+        PERMISSIONS.IOS.PHOTO_LIBRARY
+      );
+      console.log("Gallery:", gallery);
+
+      // Optional (only if saving images)
+      const photoAdd = await request(
+        PERMISSIONS.IOS.PHOTO_LIBRARY_ADD_ONLY
+      );
+      console.log("Photo Add:", photoAdd);
+    }
+  } catch (error) {
+    console.log("Permission error:", error);
   }
-  return true;
 };
+
+useEffect(() => {
+  requestPermissions();
+}, []);
 
 const uploadImageToServer = async (asset: any): Promise<string> => {
   const formData = new FormData();
@@ -688,7 +765,14 @@ const uploadImage = async (asset: any, caption = '') => {
   }
 };
 
-const pickImage = () => {
+const pickImage = async () => {
+   const granted = await requestGalleryPermission();
+
+  if (!granted) {
+    Alert.alert("Permission denied");
+    return;
+  }
+
   launchImageLibrary(
     {
       mediaType: 'photo',
@@ -713,7 +797,14 @@ const pickImage = () => {
   );
 };
 
-const takePhoto = () => {
+const takePhoto = async () => {
+    const granted = await requestCameraPermission();
+
+  if (!granted) {
+    Alert.alert("Permission denied");
+    return;
+  }
+
   launchCamera(
     {
       mediaType: 'photo',

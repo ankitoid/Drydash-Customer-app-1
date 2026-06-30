@@ -891,7 +891,8 @@ const openCancelModal = () => {
 
 
 /* ─── DYNAMIC STYLES (now accepts `colors` directly) ─── */
-const makeStyles = (colors: any, isDark: boolean) => {
+const makeStyles= (theme: any, isDark: boolean) => {
+    
     const {
         background,
         card,
@@ -901,17 +902,17 @@ const makeStyles = (colors: any, isDark: boolean) => {
         border,
         inputBackground,
         placeholderText,
-    } = colors;
+    } = theme;
 
     const accent = subText;
     const muted = textSecondary;
 
     return StyleSheet.create({
         card: {
-            backgroundColor: card,
+            backgroundColor: theme.card,
             borderRadius: 18,
             borderWidth: 1,
-            borderColor: border,
+            borderColor: theme.border,
             overflow: "visible",
             shadowColor: "#000",
             shadowOpacity: 0.2,
@@ -1079,7 +1080,7 @@ const makeStyles = (colors: any, isDark: boolean) => {
             width: 40,
             height: 40,
             borderRadius: 25,
-            backgroundColor: accent,
+            backgroundColor: theme.primary,
             alignItems: "center",
             justifyContent: "center",
             marginLeft: 10,
@@ -1185,7 +1186,7 @@ const makeStyles = (colors: any, isDark: boolean) => {
             borderRadius: 16,
             borderWidth: 1,
             borderColor: border,
-            backgroundColor: card,
+            backgroundColor: theme.card,
             padding: 16,
             gap: 10,
         },
@@ -1246,7 +1247,7 @@ const makeStyles = (colors: any, isDark: boolean) => {
             top: 24,
             right: 0,
             minWidth: 140,
-            backgroundColor: card,
+            backgroundColor: theme.card,
             borderRadius: 10,
             padding: 8,
             gap: 6,
