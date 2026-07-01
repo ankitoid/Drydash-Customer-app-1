@@ -148,13 +148,21 @@ export const UPIPaymentSelector: React.FC<UPIPaymentSelectorProps> = ({
               .filter((app: any) =>
                 SUPPORTED_UPI_APPS.some(s => s.package_name === (app.packageName || app.package_name))
               )
-              .map((app: any) => ({
-                id: app.packageName || app.package_name,
-                package_name: app.packageName || app.package_name,
-                name: app.appName || app.name,
-                icon: app.appLogo ? { uri: app.appLogo } : null,
-                isCod: false,
-              }));
+              .map((app: any) => {
+                const pkg = app.packageName || app.package_name;
+
+                const supported = SUPPORTED_UPI_APPS.find(
+                  s => s.package_name === pkg
+                );
+
+                return {
+                  id: pkg,
+                  package_name: pkg,
+                  name: app.appName || app.name,
+                  icon: supported?.localIcon,
+                  isCod: false,
+                };
+              });
             if (filtered.length === 0) {
               const fallback = SUPPORTED_UPI_APPS.map(app => ({
                 id: app.package_name,
@@ -294,13 +302,40 @@ export const UPIPaymentSelector: React.FC<UPIPaymentSelectorProps> = ({
 
   const renderPaymentIcon = (item: any, size: number = 40) => {
     const iconStyle = size === 40 ? styles.paymentIcon : styles.otherIcon;
+
     if (item.isCod) {
-      return <Ionicons name="cash-outline" size={size} color="#555" style={iconStyle} />;
+      return (
+        <Ionicons
+          name="cash-outline"
+          size={size}
+          color="#555"
+          style={iconStyle}
+        />
+      );
     }
-    if (item.icon) {
-      return <Image source={item.icon} style={iconStyle} onError={() => console.log('Icon error:', item.name)} />;
+
+    const localIcon = SUPPORTED_UPI_APPS.find(
+      app => app.package_name === item.package_name
+    )?.localIcon;
+
+    if (localIcon) {
+      return (
+        <Image
+          source={localIcon}
+          style={iconStyle}
+          resizeMode="contain"
+        />
+      );
     }
-    return <Ionicons name="phone-portrait-outline" size={size} color="#888" style={iconStyle} />;
+
+    return (
+      <Ionicons
+        name="phone-portrait-outline"
+        size={size}
+        color="#888"
+        style={iconStyle}
+      />
+    );
   };
 
   if (!selectedApp) {
