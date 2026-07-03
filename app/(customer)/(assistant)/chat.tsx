@@ -876,7 +876,7 @@ const sendUserMessage = async (text: string) => {
     // Add the real ID to seen set so socket won't add it again
     // seenMessageIds.current.add(savedMsg._id);
   } catch (err) {
-    console.error('Send failed', err);
+    console.error('Send failed', err);KeyboardAvoidingView
     Alert.alert('Error', 'Message could not be sent.');
     setMessages((prev) => prev.filter((m) => m.id !== tempId));
     return;
@@ -954,7 +954,7 @@ const closeImagePreview = () => {
 }, [roomId]);
 
   return (
-    <KeyboardAvoidingView style={styles.root}>
+    <View style={styles.root}>
       <SafeAreaView style={{ flex: 1 }}>
         {/* Header */}
         <View style={styles.header}>
@@ -976,7 +976,7 @@ const closeImagePreview = () => {
         <KeyboardAvoidingView
           style={{ flex: 1 }}
           behavior="padding"
-          keyboardVerticalOffset={Platform.OS === "ios" ? 88 : 0}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 1 : 0}
         >
           <View style={{ flex: 1 }}>
             <FlatList
@@ -1065,7 +1065,7 @@ const closeImagePreview = () => {
           </View>
         </KeyboardAvoidingView>
       </SafeAreaView>
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 

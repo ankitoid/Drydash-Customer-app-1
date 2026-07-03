@@ -13,7 +13,6 @@
       "supportsTablet": true,
       "googleServicesFile": "./GoogleService-Info.plist",
       "config": {
-        // "googleMapsApiKey": "AIzaSyAT-o42Ycc63KWHxbIiGX2KgluW4BpdaYM"
         "googleMapsApiKey": "AIzaSyDGSQ0H6zb3kLpfWQgQEDWJUZdWvNyWDFY"
       },
       "bundleIdentifier": "com.drydash.customer",
@@ -21,7 +20,14 @@
         "aps-environment": "production"
       },
       "infoPlist": {
-        "UIBackgroundModes": ["remote-notification"]
+        "UIBackgroundModes": [
+          "remote-notification"
+        ],
+        "LSApplicationQueriesSchemes": [
+          "tez",
+          "phonepe",
+          "paytmmp"
+        ]
       }
     },
     "android": {

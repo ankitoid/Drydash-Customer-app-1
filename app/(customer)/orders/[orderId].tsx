@@ -222,7 +222,7 @@ export default function OrderReceipt() {
   const [availableCoupons, setAvailableCoupons] = useState<Coupon[]>([]);
   const [couponLoading, setCouponLoading] = useState(false);
   const [isPaymentDone, setIsPaymentDone] = useState(false);
-  
+
   const [socketVerified, setSocketVerified] = useState(false);
   const [razorpaySuccessData, setRazorpaySuccessData] = useState<any>(null);
 
@@ -231,41 +231,41 @@ export default function OrderReceipt() {
   const [isCodSelected, setIsCodSelected] = useState<boolean>(false);
 
 
-    console.log("this is the singleOrderDetails in the beginning of the component========>>>>>", singleOrderDetails);
-useEffect(() => {
-  if (paymentUpdate && paymentUpdate.orderId === orderId) {
-    if (paymentUpdate.paymentStatus === "success" || paymentUpdate.isPaid) {
-      setSocketVerified(true);
-    } else if (paymentUpdate.paymentStatus === "failed") {
-      handlePaymentFailure("Payment failed");
+  console.log("this is the singleOrderDetails in the beginning of the component========>>>>>", singleOrderDetails);
+  useEffect(() => {
+    if (paymentUpdate && paymentUpdate.orderId === orderId) {
+      if (paymentUpdate.paymentStatus === "success" || paymentUpdate.isPaid) {
+        setSocketVerified(true);
+      } else if (paymentUpdate.paymentStatus === "failed") {
+        handlePaymentFailure("Payment failed");
+        setPaymentUpdate(null);
+      }
+    }
+  }, [paymentUpdate, orderId]);
+
+  useEffect(() => {
+    if (socketVerified && razorpaySuccessData) {
+      setIsPaymentDone(true);
+      if (orderId) {
+        confirmCouponApi({ orderId }).catch(console.error);
+      }
+      router.replace({
+        pathname: "/(customer)/orders/payment-success",
+        params: { orderId },
+      });
       setPaymentUpdate(null);
+      setSocketVerified(false);
+      setRazorpaySuccessData(null);
     }
-  }
-}, [paymentUpdate, orderId]);
+  }, [socketVerified, razorpaySuccessData, orderId]);
 
-useEffect(() => {
-  if (socketVerified && razorpaySuccessData) {
-    setIsPaymentDone(true);
-    if (orderId) {
-      confirmCouponApi({ orderId }).catch(console.error);
+  useEffect(() => {
+    if (singleOrderDetails) {
+      setSelectedDeliveryOption(
+        singleOrderDetails.morningDelivery
+      );
     }
-    router.replace({
-      pathname: "/(customer)/orders/payment-success",
-      params: { orderId },
-    });
-    setPaymentUpdate(null);
-    setSocketVerified(false);
-    setRazorpaySuccessData(null);
-  }
-}, [socketVerified, razorpaySuccessData, orderId]);
-
-useEffect(() => {
-  if (singleOrderDetails) {
-    setSelectedDeliveryOption(
-      singleOrderDetails.morningDelivery
-    );
-  }
-}, [singleOrderDetails]);
+  }, [singleOrderDetails]);
   if (!user) return null;
 
   const User = user?.user ? user?.user : user;
@@ -355,31 +355,31 @@ useEffect(() => {
   };
 
   const refreshRazorpayOrder = async () => {
-  // Only refresh if order exists and not paid
-  if (!singleOrderDetails || singleOrderDetails.isPaid) return;
-  try {
-    const res = await razorpayPaymentInitiate(orderId);
-    if (res?.data?.success) {
-      setRazorpayData(res.data);
+    // Only refresh if order exists and not paid
+    if (!singleOrderDetails || singleOrderDetails.isPaid) return;
+    try {
+      const res = await razorpayPaymentInitiate(orderId);
+      if (res?.data?.success) {
+        setRazorpayData(res.data);
+      }
+    } catch (error) {
+      console.error('Failed to refresh Razorpay order:', error);
     }
-  } catch (error) {
-    console.error('Failed to refresh Razorpay order:', error);
-  }
-};
+  };
 
-useEffect(() => {
-  if (
-    singleOrderDetails &&
-    !singleOrderDetails.isPaid &&
-    !razorpayData
-  ) {
-    razorpayPaymentInitiate(orderId).then((res) => {
-      if (res?.data?.success) setRazorpayData(res.data);
-    });
-  }
-}, [singleOrderDetails]);
+  useEffect(() => {
+    if (
+      singleOrderDetails &&
+      !singleOrderDetails.isPaid &&
+      !razorpayData
+    ) {
+      razorpayPaymentInitiate(orderId).then((res) => {
+        if (res?.data?.success) setRazorpayData(res.data);
+      });
+    }
+  }, [singleOrderDetails]);
 
-console.log(" this is singleOrderDetails=======>>", singleOrderDetails);
+  console.log(" this is singleOrderDetails=======>>", singleOrderDetails);
 
   const fetchAvailableCoupons = async (orderData?: OrderDetails | null) => {
     try {
@@ -492,7 +492,7 @@ console.log(" this is singleOrderDetails=======>>", singleOrderDetails);
   );
 
 
-  console.log("this is the order details===>>>",singleOrderDetails)
+  console.log("this is the order details===>>>", singleOrderDetails)
 
 
   // const handleRazorpayPayNow = async () => {
@@ -557,68 +557,68 @@ console.log(" this is singleOrderDetails=======>>", singleOrderDetails);
   //     setShowPaymentWebView(false);
   //   }
   // };
-  
-//   const handlePaymentSuccess = async (data: any) => {
-//   try {
-//     setPaymentLoading(true);
-//     const verifyRes = await verifyRazorpayPayment({
-//       razorpay_order_id: data.razorpay_order_id,
-//       razorpay_payment_id: data.razorpay_payment_id,
-//       razorpay_signature: data.razorpay_signature,
-//     });
-//     if (!verifyRes?.success) throw new Error('Verification failed');
-//     if (orderId) await confirmCouponApi({ orderId });
-//     router.replace({
-//       pathname: '/(customer)/orders/payment-success',
-//       params: { orderId, amount: String(singleOrderDetails?.totalAmount), paymentId: data.razorpay_payment_id },
-//     });
-//   } catch {
-//     router.replace({
-//       pathname: '/(customer)/orders/payment-failure',
-//       params: { orderId, amount: String(singleOrderDetails?.totalAmount), reason: 'Verification failed' },
-//     });
-//   } finally {
-//     setPaymentLoading(false);
-//   }
-// };
 
-const handlePaymentSuccess = async (data: any) => {
-  try {
-    console.log("payment success data==>>", data);
-    setPaymentLoading(true);
+  //   const handlePaymentSuccess = async (data: any) => {
+  //   try {
+  //     setPaymentLoading(true);
+  //     const verifyRes = await verifyRazorpayPayment({
+  //       razorpay_order_id: data.razorpay_order_id,
+  //       razorpay_payment_id: data.razorpay_payment_id,
+  //       razorpay_signature: data.razorpay_signature,
+  //     });
+  //     if (!verifyRes?.success) throw new Error('Verification failed');
+  //     if (orderId) await confirmCouponApi({ orderId });
+  //     router.replace({
+  //       pathname: '/(customer)/orders/payment-success',
+  //       params: { orderId, amount: String(singleOrderDetails?.totalAmount), paymentId: data.razorpay_payment_id },
+  //     });
+  //   } catch {
+  //     router.replace({
+  //       pathname: '/(customer)/orders/payment-failure',
+  //       params: { orderId, amount: String(singleOrderDetails?.totalAmount), reason: 'Verification failed' },
+  //     });
+  //   } finally {
+  //     setPaymentLoading(false);
+  //   }
+  // };
 
-    // Check if it's a COD payment (no real payment ID)
-    if (data.razorpay_payment_id === 'COD') {
-      // For COD, coupons don't apply. The amount is the total amount without discount.
-      const fullAmount = (singleOrderDetails?.totalAmount || 0) + (singleOrderDetails?.discountAmount || 0);
-      setIsPaymentDone(true);
-      router.replace({
-        pathname: '/(customer)/orders/cod-success',
-        params: {
-          orderId,
-          amount: String(fullAmount),
-          discount: "0",
-          paymentId: 'COD',
-          address: singleOrderDetails?.address,
-          items: JSON.stringify(singleOrderDetails?.items),
-        },
-      });
-      return;
+  const handlePaymentSuccess = async (data: any) => {
+    try {
+      console.log("payment success data==>>", data);
+      setPaymentLoading(true);
+
+      // Check if it's a COD payment (no real payment ID)
+      if (data.razorpay_payment_id === 'COD') {
+        // For COD, coupons don't apply. The amount is the total amount without discount.
+        const fullAmount = (singleOrderDetails?.totalAmount || 0) + (singleOrderDetails?.discountAmount || 0);
+        setIsPaymentDone(true);
+        router.replace({
+          pathname: '/(customer)/orders/cod-success',
+          params: {
+            orderId,
+            amount: String(fullAmount),
+            discount: "0",
+            paymentId: 'COD',
+            address: singleOrderDetails?.address,
+            items: JSON.stringify(singleOrderDetails?.items),
+          },
+        });
+        return;
+      }
+
+      // For online payments, wait for Razorpay UI to close and then set data
+      // The useEffect will trigger redirection once both Razorpay and Socket confirm success
+      setRazorpaySuccessData(data);
+
+      // Fallback: If socket webhook doesn't arrive within 4 seconds, proceed anyway
+      setTimeout(() => {
+        setSocketVerified(true);
+      }, 4000);
+    } catch (error) {
+      console.error('Payment success error:', error);
+      setPaymentLoading(false);
     }
-
-    // For online payments, wait for Razorpay UI to close and then set data
-    // The useEffect will trigger redirection once both Razorpay and Socket confirm success
-    setRazorpaySuccessData(data);
-    
-    // Fallback: If socket webhook doesn't arrive within 4 seconds, proceed anyway
-    setTimeout(() => {
-      setSocketVerified(true);
-    }, 4000);
-  } catch (error) {
-    console.error('Payment success error:', error);
-    setPaymentLoading(false);
-  }
-};
+  };
 
   const handlePaymentFailure = (reason: string) => {
     // setShowPaymentWebView(false);
@@ -659,7 +659,7 @@ const handlePaymentSuccess = async (data: any) => {
       setSingleOrderDetails({ ...updatedOrder });
 
 
-       await refreshRazorpayOrder();
+      await refreshRazorpayOrder();
 
       setShowCouponSheet(false);
       setCouponError("");
@@ -820,13 +820,13 @@ const handlePaymentSuccess = async (data: any) => {
   // };
 
   const computeGstBreakup = () => {
-  const final = Number(finalTotal || 0);
+    const final = Number(finalTotal || 0);
 
-  return {
-    cgst: final * 0.09,
-    sgst: final * 0.09,
+    return {
+      cgst: final * 0.09,
+      sgst: final * 0.09,
+    };
   };
-};
   const { cgst, sgst } = computeGstBreakup();
 
 
@@ -928,19 +928,19 @@ const handlePaymentSuccess = async (data: any) => {
 
       {/* Delivery Info */}
       {isDelivered && (
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', padding: 16, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.05)' }}>
-        <View style={{ flex: 1 }}>
-          <Text style={{ color: theme.textSecondary, fontSize: 10, fontWeight: '700', marginBottom: 8, textTransform: 'uppercase' }}>DELIVERED TO</Text>
-          <Text style={{ color: theme.text, fontSize: 14, fontWeight: '600' }}>{singleOrderDetails.customerName || name}</Text>
-        </View>
-        <View style={{ flex: 1 }}>
-          <Text style={{ color: theme.textSecondary, fontSize: 10, fontWeight: '700', marginBottom: 8, textTransform: 'uppercase' }}>DELIVERED BY</Text>
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <Image source={{ uri: "https://i.pravatar.cc/100?img=12" }} style={{ width: 20, height: 20, borderRadius: 10, marginRight: 8, backgroundColor: theme.border }} />
-            <Text style={{ color: theme.text, fontSize: 14, fontWeight: '600' }}>{singleOrderDetails.assignedRider?.delivery?.riderName || singleOrderDetails.riderName}</Text>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', padding: 16, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.05)' }}>
+          <View style={{ flex: 1 }}>
+            <Text style={{ color: theme.textSecondary, fontSize: 10, fontWeight: '700', marginBottom: 8, textTransform: 'uppercase' }}>DELIVERED TO</Text>
+            <Text style={{ color: theme.text, fontSize: 14, fontWeight: '600' }}>{singleOrderDetails.customerName || name}</Text>
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={{ color: theme.textSecondary, fontSize: 10, fontWeight: '700', marginBottom: 8, textTransform: 'uppercase' }}>DELIVERED BY</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Image source={{ uri: "https://i.pravatar.cc/100?img=12" }} style={{ width: 20, height: 20, borderRadius: 10, marginRight: 8, backgroundColor: theme.border }} />
+              <Text style={{ color: theme.text, fontSize: 14, fontWeight: '600' }}>{singleOrderDetails.assignedRider?.delivery?.riderName || singleOrderDetails.riderName}</Text>
+            </View>
           </View>
         </View>
-      </View>
       )}
       {/* Address */}
       <View style={{ padding: 16, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.05)' }}>
@@ -954,13 +954,13 @@ const handlePaymentSuccess = async (data: any) => {
         <Text style={{ color: theme.text, fontSize: 14, fontWeight: '600' }}>{formatDateTime(singleOrderDetails.createdAt)}</Text>
       </View>
 
-        {/* Pickup Completed Date & Time */}
-        {isDelivered && (
-          <View style={{ padding: 16 }}>
-            <Text style={{ color: theme.textSecondary, fontSize: 10, fontWeight: '700', marginBottom: 8, textTransform: 'uppercase' }}>ORDER DELIVERED DATE & TIME</Text>
-            <Text style={{ color: theme.text, fontSize: 14, fontWeight: '600' }}>{formatDateTime(singleOrderDetails?.statusHistory?.delivered || singleOrderDetails.createdAt)}</Text>
-          </View>
-        )}
+      {/* Pickup Completed Date & Time */}
+      {isDelivered && (
+        <View style={{ padding: 16 }}>
+          <Text style={{ color: theme.textSecondary, fontSize: 10, fontWeight: '700', marginBottom: 8, textTransform: 'uppercase' }}>ORDER DELIVERED DATE & TIME</Text>
+          <Text style={{ color: theme.text, fontSize: 14, fontWeight: '600' }}>{formatDateTime(singleOrderDetails?.statusHistory?.delivered || singleOrderDetails.createdAt)}</Text>
+        </View>
+      )}
 
     </View>
   );
@@ -1008,7 +1008,7 @@ const handlePaymentSuccess = async (data: any) => {
             {(singleOrderDetails.items || []).map((item, index) => (
               <View
                 key={index}
-                style={{ backgroundColor: 'transparent', borderWidth: 1, borderColor: theme.background, marginBottom: 12, borderRadius: 16, padding: 12, flexDirection: 'row', alignItems: 'center' }}
+                style={{ backgroundColor: theme.card, borderWidth: 1, borderColor: theme.background, marginBottom: 12, borderRadius: 16, padding: 12, flexDirection: 'row', alignItems: 'center' }}
               >
                 <View style={{ backgroundColor: theme.card, width: 48, height: 48, borderRadius: 12, justifyContent: 'center', alignItems: 'center' }}>
                   {item.imageUrl ? (
@@ -1048,14 +1048,14 @@ const handlePaymentSuccess = async (data: any) => {
                 <DownloadBillButton orderId={orderId as string} />
               </View>
             )}
+            <View style={{ borderColor: theme.border, borderWidth: 1, paddingHorizontal: 10, paddingTop:8, borderRadius: 10, marginBottom: 10 }}>
+              <TouchableOpacity activeOpacity={0.8} onPress={() => setShowBillBreakup(!showBillBreakup)} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, marginTop: isPaid ? 0 : 16 }}>
+                <Text style={{ color: theme.text, fontSize: 16, fontWeight: '600' }}>Bill Details</Text>
+                <Ionicons name={showBillBreakup ? "chevron-down" : "chevron-forward"} size={18} color={theme.text} />
+              </TouchableOpacity>
 
-            <TouchableOpacity activeOpacity={0.8} onPress={() => setShowBillBreakup(!showBillBreakup)} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, marginTop: isPaid ? 0 : 16 }}>
-              <Text style={{ color: theme.text, fontSize: 16, fontWeight: '600' }}>Bill Details</Text>
-              <Ionicons name={showBillBreakup ? "chevron-down" : "chevron-forward"} size={18} color={theme.text} />
-            </TouchableOpacity>
-            
-            {showBillBreakup && (
-               <View style={{ marginBottom: 16 }}>
+              {showBillBreakup && (
+                <View style={{ marginBottom: 16 }}>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 }}>
                     <Text style={{ color: theme.textSecondary, fontSize: 14 }}>Subtotal</Text>
                     <Text style={{ color: theme.textSecondary, fontSize: 14 }}>₹{subtotal.toFixed(0)}</Text>
@@ -1070,19 +1070,19 @@ const handlePaymentSuccess = async (data: any) => {
                     <Text style={{ color: theme.textSecondary, fontSize: 14 }}>GST (18%)</Text>
                     <Text style={{ color: theme.textSecondary, fontSize: 14 }}>₹{(cgst + sgst).toFixed(0)}</Text>
                   </View>
-               </View>
-            )}
-            
-            <View style={{ marginBottom: 24 }}>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-                <View>
-                  <Text style={{ color: theme.text, fontSize: 16, fontWeight: '700' }}>Total Bill</Text>
-                  <Text style={{ color: theme.textSecondary, fontSize: 11, marginTop: 4 }}>Includes GST & all taxes</Text>
                 </View>
-                <Text style={{ color: theme.primary, fontSize: 20, fontWeight: '800' }}>₹{finalTotal?.toFixed(0)}</Text>
+              )}
+
+              <View style={{ marginBottom: 14 }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                  <View>
+                    <Text style={{ color: theme.text, fontSize: 16, fontWeight: '700' }}>Total Bill</Text>
+                    <Text style={{ color: theme.textSecondary, fontSize: 11, marginTop: 4 }}>Includes GST & all taxes</Text>
+                  </View>
+                  <Text style={{ color: theme.primary, fontSize: 20, fontWeight: '800' }}>₹{finalTotal?.toFixed(0)}</Text>
+                </View>
               </View>
             </View>
-
             {!isPaid && !isCodSelected && (
               <>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 16, marginBottom: 12 }}>
@@ -1091,41 +1091,41 @@ const handlePaymentSuccess = async (data: any) => {
                     <Text style={{ color: theme.text, fontSize: 12, fontWeight: '600' }}>VIEW 〉</Text>
                   </TouchableOpacity>
                 </View>
-                
+
                 {appliedCoupon ? (
                   <View style={{ backgroundColor: 'transparent', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
-                     <View>
-                        <View style={{ backgroundColor: isDark ? theme.background : '#E6F4F0', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 6, alignSelf: 'flex-start', marginBottom: 4 }}>
-                          <Text style={{ color: theme.primary, fontSize: 12, fontWeight: '600' }}>'{appliedCoupon.code}'</Text>
-                        </View>
-                        <Text style={{ color: theme.textSecondary, fontSize: 12 }}>Saved ₹{totalDiscount?.toFixed(0)} on this order</Text>
-                     </View>
-                     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                        <Ionicons name="checkmark-circle" size={16} color={theme.primary} style={{ marginRight: 4 }} />
-                        <Text style={{ color: theme.primary, fontSize: 14, fontWeight: '600', marginRight: 16 }}>Applied</Text>
-                        <TouchableOpacity onPress={() => appliedCoupon && handleCouponAction(appliedCoupon, "remove")}>
-                          <Ionicons name="trash-outline" size={20} color={theme.textSecondary} />
-                        </TouchableOpacity>
-                     </View>
+                    <View>
+                      <View style={{ backgroundColor: isDark ? theme.background : '#E6F4F0', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 6, alignSelf: 'flex-start', marginBottom: 4 }}>
+                        <Text style={{ color: theme.primary, fontSize: 12, fontWeight: '600' }}>'{appliedCoupon.code}'</Text>
+                      </View>
+                      <Text style={{ color: theme.textSecondary, fontSize: 12 }}>Saved ₹{totalDiscount?.toFixed(0)} on this order</Text>
+                    </View>
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                      <Ionicons name="checkmark-circle" size={16} color={theme.primary} style={{ marginRight: 4 }} />
+                      <Text style={{ color: theme.primary, fontSize: 14, fontWeight: '600', marginRight: 16 }}>Applied</Text>
+                      <TouchableOpacity onPress={() => appliedCoupon && handleCouponAction(appliedCoupon, "remove")}>
+                        <Ionicons name="trash-outline" size={20} color={theme.textSecondary} />
+                      </TouchableOpacity>
+                    </View>
                   </View>
                 ) : (
-                   <View style={{ marginBottom: 24, flexDirection: 'row', alignItems: 'center', backgroundColor: theme.inputBackground, borderRadius: 12, paddingHorizontal: 16, height: 48 }}>
-                     <MaterialCommunityIcons name="ticket-percent-outline" size={18} color={theme.textSecondary} style={{ marginRight: 12 }} />
-                     <TextInput
-                       value={couponInput}
-                       onChangeText={(t) => {
-                         setCouponInput(t.toUpperCase());
-                         setCouponError("");
-                       }}
-                       placeholder="Add coupon"
-                       placeholderTextColor={theme.textSecondary}
-                       style={{ flex: 1, color: theme.text, fontSize: 14 }}
-                       autoCapitalize="characters"
-                     />
-                     <TouchableOpacity onPress={handleManualApply}>
-                       <Text style={{ color: theme.primary, fontWeight: '600', fontSize: 14 }}>Apply</Text>
-                     </TouchableOpacity>
-                   </View>
+                  <View style={{ marginBottom: 24, flexDirection: 'row', alignItems: 'center', backgroundColor: theme.inputBackground, borderRadius: 12, paddingHorizontal: 16, height: 48 }}>
+                    <MaterialCommunityIcons name="ticket-percent-outline" size={18} color={theme.textSecondary} style={{ marginRight: 12 }} />
+                    <TextInput
+                      value={couponInput}
+                      onChangeText={(t) => {
+                        setCouponInput(t.toUpperCase());
+                        setCouponError("");
+                      }}
+                      placeholder="Add coupon"
+                      placeholderTextColor={theme.textSecondary}
+                      style={{ flex: 1, color: theme.text, fontSize: 14 }}
+                      autoCapitalize="characters"
+                    />
+                    <TouchableOpacity onPress={handleManualApply}>
+                      <Text style={{ color: theme.primary, fontWeight: '600', fontSize: 14 }}>Apply</Text>
+                    </TouchableOpacity>
+                  </View>
                 )}
               </>
             )}
@@ -1158,7 +1158,7 @@ const handlePaymentSuccess = async (data: any) => {
             )}
 
             <Text style={{ color: theme.textSecondary, fontSize: 12, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 12 }}>SPECIAL INSTRUCTIONS</Text>
-            <View style={{ backgroundColor: theme.inputBackground, borderRadius: 16, padding: 16, marginBottom: 24 }}>
+            <View style={{ backgroundColor: theme.card, borderRadius: 16, padding: 12, marginBottom: 12 }}>
               <TextInput
                 value={singleOrderDetails.notes || ""}
                 placeholder="Any specific requirements for your wash?"
@@ -1207,21 +1207,21 @@ const handlePaymentSuccess = async (data: any) => {
           )} */}
 
           {showPayNow && razorpayData && (
-  <UPIPaymentSelector
-    razorpayOrderId={razorpayData.razorpayOrderId}
-    amount={razorpayData.amount}        // already in paise
-    customerEmail={email}
-    customerPhone={phone}
-    customerName={name}
-    razorpayKeyId={razorpayData.key}
-    themeColor={theme.primary}
-    orderId={orderId} 
-    onSuccess={handlePaymentSuccess}
-    onFailure={handlePaymentFailure}
-    defaultCod={singleOrderDetails?.isCODConfirmed}
-    onPaymentMethodChange={setIsCodSelected}
-  />
-)}
+            <UPIPaymentSelector
+              razorpayOrderId={razorpayData.razorpayOrderId}
+              amount={razorpayData.amount}        // already in paise
+              customerEmail={email}
+              customerPhone={phone}
+              customerName={name}
+              razorpayKeyId={razorpayData.key}
+              themeColor={theme.primary}
+              orderId={orderId}
+              onSuccess={handlePaymentSuccess}
+              onFailure={handlePaymentFailure}
+              defaultCod={singleOrderDetails?.isCODConfirmed}
+              onPaymentMethodChange={setIsCodSelected}
+            />
+          )}
 
           {/* <Modal visible={showPaymentWebView} animationType="slide">
             {razorpayData && (
@@ -1251,14 +1251,14 @@ const handlePaymentSuccess = async (data: any) => {
               <Ionicons name="arrow-back" size={20} color={theme.text} />
             </TouchableOpacity>
 
-            <View style={{ flex: 1,}}>
+            <View style={{ flex: 1, }}>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <Ionicons name="send-outline" size={16} color={theme.text} style={{ transform: [{ rotate: '-45deg' }], marginRight: 6 }} />
                 <Text style={{ color: theme.text, fontSize: 18, fontWeight: 'bold' }} numberOfLines={1}>
                   {singleOrderDetails.plantName || "Green Park"}
                 </Text>
               </View>
-              <Text style={{ color: theme.textSecondary, fontSize: 12, marginTop: 2,}} numberOfLines={1}>
+              <Text style={{ color: theme.textSecondary, fontSize: 12, marginTop: 2, }} numberOfLines={1}>
                 {singleOrderDetails.address}
               </Text>
             </View>
@@ -1321,26 +1321,26 @@ const handlePaymentSuccess = async (data: any) => {
               <Text style={{ color: theme.text, fontSize: 16, fontWeight: '600' }}>Bill Details</Text>
               <Ionicons name={showBillBreakup ? "chevron-down" : "chevron-forward"} size={18} color={theme.text} />
             </TouchableOpacity>
-            
+
             {showBillBreakup && (
-               <View style={{ backgroundColor: theme.card, marginBottom: 16, padding: 16, borderRadius: 16 }}>
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
-                    <Text style={{ color: theme.textSecondary, fontSize: 14 }}>Subtotal</Text>
-                    <Text style={{ color: theme.text, fontSize: 14 }}>₹{subtotal.toFixed(0)}</Text>
-                  </View>
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
-                    <Text style={{ color: theme.textSecondary, fontSize: 14 }}>Delivery Handling</Text>
-                    <Text style={{ color: theme.text, fontSize: 14 }}>₹{Number(singleOrderDetails.deliveryCharges || 0).toFixed(0)}</Text>
-                  </View>
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
-                    <Text style={{ color: theme.textSecondary, fontSize: 14 }}>Service Charge</Text>
-                    <Text style={{ color: theme.text, fontSize: 14 }}>₹{Number(singleOrderDetails.taxAmount || 0).toFixed(0)}</Text>
-                  </View>
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                    <Text style={{ color: theme.textSecondary, fontSize: 14 }}>Item Discount</Text>
-                    <Text style={{ color: theme.primary, fontSize: 14 }}>-₹{Number(singleOrderDetails.discountAmount || 0).toFixed(0)}</Text>
-                  </View>
-               </View>
+              <View style={{ backgroundColor: theme.card, marginBottom: 16, padding: 16, borderRadius: 16 }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <Text style={{ color: theme.textSecondary, fontSize: 14 }}>Subtotal</Text>
+                  <Text style={{ color: theme.text, fontSize: 14 }}>₹{subtotal.toFixed(0)}</Text>
+                </View>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <Text style={{ color: theme.textSecondary, fontSize: 14 }}>Delivery Handling</Text>
+                  <Text style={{ color: theme.text, fontSize: 14 }}>₹{Number(singleOrderDetails.deliveryCharges || 0).toFixed(0)}</Text>
+                </View>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <Text style={{ color: theme.textSecondary, fontSize: 14 }}>Service Charge</Text>
+                  <Text style={{ color: theme.text, fontSize: 14 }}>₹{Number(singleOrderDetails.taxAmount || 0).toFixed(0)}</Text>
+                </View>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                  <Text style={{ color: theme.textSecondary, fontSize: 14 }}>Item Discount</Text>
+                  <Text style={{ color: theme.primary, fontSize: 14 }}>-₹{Number(singleOrderDetails.discountAmount || 0).toFixed(0)}</Text>
+                </View>
+              </View>
             )}
 
             <View style={{ marginBottom: 32 }}>
@@ -1356,7 +1356,7 @@ const handlePaymentSuccess = async (data: any) => {
             {renderCombinedOrderDetails()}
 
             <Text style={{ color: theme.textSecondary, fontSize: 12, fontWeight: '700', textTransform: 'uppercase', marginBottom: 12 }}>NEED HELP?</Text>
-            <TouchableOpacity style={{ backgroundColor: theme.card, borderRadius: 16, padding: 16, flexDirection: 'row', alignItems: 'center', borderWidth: 0.5, borderColor: theme.lightborder, shadowColor : theme.primary, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 4, elevation: 5 }}  onPress={() => router.push("/(customer)/(assistant)/chat")}>
+            <TouchableOpacity style={{ backgroundColor: theme.card, borderRadius: 16, padding: 16, flexDirection: 'row', alignItems: 'center', borderWidth: 0.5, borderColor: theme.lightborder, shadowColor: theme.primary, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 4, elevation: 5 }} onPress={() => router.push("/(customer)/(assistant)/chat")}>
               <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: theme.inputBackground, justifyContent: 'center', alignItems: 'center', marginRight: 12 }}>
                 <Ionicons name="chatbubble-ellipses" size={20} color={theme.primary} />
               </View>
@@ -1369,7 +1369,7 @@ const handlePaymentSuccess = async (data: any) => {
 
           </ScrollView>
         </KeyboardAvoidingView>
-      ) : (     
+      ) : (
         <>
           <KeyboardAvoidingView
             style={{ flex: 1, backgroundColor: theme.background }}
@@ -1490,7 +1490,7 @@ const handlePaymentSuccess = async (data: any) => {
                 </View>
               ))}
 
-              { !isPaid && singleOrderDetails?.status != "cancelled" && (
+              {!isPaid && singleOrderDetails?.status != "cancelled" && (
                 <View style={s.offersHeader}>
                   <Text style={s.offersLabel}>AVAILABLE OFFERS</Text>
                   <TouchableOpacity onPress={openCouponModal}>

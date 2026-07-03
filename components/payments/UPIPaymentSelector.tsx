@@ -12,6 +12,7 @@ import {
   Platform,
   UIManager,
   Modal,
+  Linking,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
@@ -47,6 +48,17 @@ const SUPPORTED_UPI_APPS = [
   { package_name: 'net.one97.paytm', name: 'Paytm', localIcon: require('@/assets/images/icons/paytm.png') },
   { package_name: 'in.amazon.mShop.android.shopping', name: 'Amazon Pay', localIcon: require('@/assets/images/icons/amazon-pay.png') },
 ];
+
+const IOS_UPI_APPS = [
+  { id: 'tez', name: 'Google Pay', scheme: 'tez://', localIcon: require('@/assets/images/icons/google-pay.png') },
+  { id: 'phonepe', name: 'PhonePe', scheme: 'phonepe://', localIcon: require('@/assets/images/icons/phone-pe.png') },
+  { id: 'paytmmp', name: 'Paytm', scheme: 'paytmmp://', localIcon: require('@/assets/images/icons/paytm.png') },
+];
+const ONLINE_OPTION = {
+  id: 'online',
+  name: 'Pay Online',
+  isCod: false,
+}
 
 const COD_OPTION = {
   id: 'cod',
@@ -114,11 +126,31 @@ export const UPIPaymentSelector: React.FC<UPIPaymentSelectorProps> = ({
     modalBtnConfirm: { paddingVertical: 10, paddingHorizontal: 16, borderRadius: 8 },
     modalBtnConfirmText: { color: theme.background, fontWeight: '700' as const, fontSize: 14 },
   }), [theme, isDark]);
-  const [installedApps, setInstalledApps] = useState<any[]>([]);
-  const [selectedApp, setSelectedApp] = useState<any>(null);
+  // const [installedApps, setInstalledApps] = useState<any[]>([]);
+  // const [selectedApp, setSelectedApp] = useState<any>(null);
+  const [installedApps] = useState<any[]>([
+  ONLINE_OPTION,
+  COD_OPTION,
+]);
+
+const [selectedApp, setSelectedApp] = useState<any>(
+  defaultCod ? COD_OPTION : ONLINE_OPTION
+);
   const [loading, setLoading] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [showCodConfirm, setShowCodConfirm] = useState(false);
+
+  const detectAppsIOS = async () => {
+    const checks = await Promise.all(
+      IOS_UPI_APPS.map(async (app) => ({
+        ...app,
+        installed: await Linking.canOpenURL(app.scheme).catch(() => false),
+      }))
+    );
+    const installed = checks.filter(a => a.installed);
+    setInstalledApps(installed.length ? installed : IOS_UPI_APPS);
+    setSelectedApp(defaultCod ? COD_OPTION : (installed[0] || IOS_UPI_APPS[0]));
+  };
 
   useEffect(() => {
     if (selectedApp && onPaymentMethodChange) {
@@ -126,84 +158,89 @@ export const UPIPaymentSelector: React.FC<UPIPaymentSelectorProps> = ({
     }
   }, [selectedApp]);
 
-  useEffect(() => {
-    const detectApps = () => {
-      try {
-        if (RazorpayCheckout.getAppsWhichSupportUPI && typeof RazorpayCheckout.getAppsWhichSupportUPI === 'function') {
-          RazorpayCheckout.getAppsWhichSupportUPI((result: any) => {
-            let appsArray = result?.data || [];
-            if (appsArray.length === 0) {
-              const fallback = SUPPORTED_UPI_APPS.map(app => ({
-                id: app.package_name,
-                package_name: app.package_name,
-                name: app.name,
-                icon: app.localIcon,
-                isCod: false,
-              }));
-              setInstalledApps(fallback);
-              setSelectedApp(defaultCod ? COD_OPTION : fallback[0]);
-              return;
-            }
-            const filtered = appsArray
-              .filter((app: any) =>
-                SUPPORTED_UPI_APPS.some(s => s.package_name === (app.packageName || app.package_name))
-              )
-              .map((app: any) => {
-                const pkg = app.packageName || app.package_name;
+  // useEffect(() => {
+  //   if (Platform.OS === 'ios') {
+  //     detectAppsIOS();
+  //   }
+  //   else {
+  //     const detectApps = () => {
+  //       try {
+  //         if (RazorpayCheckout.getAppsWhichSupportUPI && typeof RazorpayCheckout.getAppsWhichSupportUPI === 'function') {
+  //           RazorpayCheckout.getAppsWhichSupportUPI((result: any) => {
+  //             let appsArray = result?.data || [];
+  //             if (appsArray.length === 0) {
+  //               const fallback = SUPPORTED_UPI_APPS.map(app => ({
+  //                 id: app.package_name,
+  //                 package_name: app.package_name,
+  //                 name: app.name,
+  //                 icon: app.localIcon,
+  //                 isCod: false,
+  //               }));
+  //               setInstalledApps(fallback);
+  //               setSelectedApp(defaultCod ? COD_OPTION : fallback[0]);
+  //               return;
+  //             }
+  //             const filtered = appsArray
+  //               .filter((app: any) =>
+  //                 SUPPORTED_UPI_APPS.some(s => s.package_name === (app.packageName || app.package_name))
+  //               )
+  //               .map((app: any) => {
+  //                 const pkg = app.packageName || app.package_name;
 
-                const supported = SUPPORTED_UPI_APPS.find(
-                  s => s.package_name === pkg
-                );
+  //                 const supported = SUPPORTED_UPI_APPS.find(
+  //                   s => s.package_name === pkg
+  //                 );
 
-                return {
-                  id: pkg,
-                  package_name: pkg,
-                  name: app.appName || app.name,
-                  icon: supported?.localIcon,
-                  isCod: false,
-                };
-              });
-            if (filtered.length === 0) {
-              const fallback = SUPPORTED_UPI_APPS.map(app => ({
-                id: app.package_name,
-                package_name: app.package_name,
-                name: app.name,
-                icon: null,
-                isCod: false,
-              }));
-              setInstalledApps(fallback);
-              setSelectedApp(defaultCod ? COD_OPTION : fallback[0]);
-            } else {
-              setInstalledApps(filtered);
-              setSelectedApp(defaultCod ? COD_OPTION : filtered[0]);
-            }
-          });
-        } else {
-          const fallback = SUPPORTED_UPI_APPS.map(app => ({
-            id: app.package_name,
-            package_name: app.package_name,
-            name: app.name,
-            icon: null,
-            isCod: false,
-          }));
-          setInstalledApps(fallback);
-          setSelectedApp(defaultCod ? COD_OPTION : fallback[0]);
-        }
-      } catch (error) {
-        console.error('UPI detection error:', error);
-        const fallback = SUPPORTED_UPI_APPS.map(app => ({
-          id: app.package_name,
-          package_name: app.package_name,
-          name: app.name,
-          icon: null,
-          isCod: false,
-        }));
-        setInstalledApps(fallback);
-        setSelectedApp(defaultCod ? COD_OPTION : fallback[0]);
-      }
-    };
-    detectApps();
-  }, [defaultCod]);
+  //                 return {
+  //                   id: pkg,
+  //                   package_name: pkg,
+  //                   name: app.appName || app.name,
+  //                   icon: supported?.localIcon,
+  //                   isCod: false,
+  //                 };
+  //               });
+  //             if (filtered.length === 0) {
+  //               const fallback = SUPPORTED_UPI_APPS.map(app => ({
+  //                 id: app.package_name,
+  //                 package_name: app.package_name,
+  //                 name: app.name,
+  //                 icon: null,
+  //                 isCod: false,
+  //               }));
+  //               setInstalledApps(fallback);
+  //               setSelectedApp(defaultCod ? COD_OPTION : fallback[0]);
+  //             } else {
+  //               setInstalledApps(filtered);
+  //               setSelectedApp(defaultCod ? COD_OPTION : filtered[0]);
+  //             }
+  //           });
+  //         } else {
+  //           const fallback = SUPPORTED_UPI_APPS.map(app => ({
+  //             id: app.package_name,
+  //             package_name: app.package_name,
+  //             name: app.name,
+  //             icon: null,
+  //             isCod: false,
+  //           }));
+  //           setInstalledApps(fallback);
+  //           setSelectedApp(defaultCod ? COD_OPTION : fallback[0]);
+  //         }
+  //       } catch (error) {
+  //         console.error('UPI detection error:', error);
+  //         const fallback = SUPPORTED_UPI_APPS.map(app => ({
+  //           id: app.package_name,
+  //           package_name: app.package_name,
+  //           name: app.name,
+  //           icon: null,
+  //           isCod: false,
+  //         }));
+  //         setInstalledApps(fallback);
+  //         setSelectedApp(defaultCod ? COD_OPTION : fallback[0]);
+  //       }
+  //     };
+  //     detectApps();
+  //   }
+  // }, [defaultCod]);
 
   const toggleExpand = () => {
     if (getAllOptions().length <= 1) return;
@@ -300,43 +337,62 @@ export const UPIPaymentSelector: React.FC<UPIPaymentSelectorProps> = ({
   const canExpand = optionsList.length > 1;
   const showExpandable = expanded && canExpand;
 
+  // const renderPaymentIcon = (item: any, size: number = 40) => {
+  //   const iconStyle = size === 40 ? styles.paymentIcon : styles.otherIcon;
+
+  //   if (item.isCod) {
+  //     return (
+  //       <Ionicons
+  //         name="cash-outline"
+  //         size={size}
+  //         color="#555"
+  //         style={iconStyle}
+  //       />
+  //     );
+  //   }
+
+  //   const localIcon = SUPPORTED_UPI_APPS.find(
+  //     app => app.package_name === item.package_name
+  //   )?.localIcon;
+
+  //   if (localIcon) {
+  //     return (
+  //       <Image
+  //         source={localIcon}
+  //         style={iconStyle}
+  //         resizeMode="contain"
+  //       />
+  //     );
+  //   }
+
+  //   return (
+  //     <Ionicons
+  //       name="phone-portrait-outline"
+  //       size={size}
+  //       color="#888"
+  //       style={iconStyle}
+  //     />
+  //   );
+  // };
+
   const renderPaymentIcon = (item: any, size: number = 40) => {
-    const iconStyle = size === 40 ? styles.paymentIcon : styles.otherIcon;
+  const iconStyle = size === 40 ? styles.paymentIcon : styles.otherIcon;
 
-    if (item.isCod) {
-      return (
-        <Ionicons
-          name="cash-outline"
-          size={size}
-          color="#555"
-          style={iconStyle}
-        />
-      );
-    }
+  if (item.isCod) {
+    return <Ionicons name="cash-outline" size={size} color="#555" style={iconStyle} />;
+  }
 
-    const localIcon = SUPPORTED_UPI_APPS.find(
-      app => app.package_name === item.package_name
-    )?.localIcon;
+  // item.localIcon exists directly for iOS apps; look it up for Android
+  const localIcon = item.localIcon || SUPPORTED_UPI_APPS.find(
+    app => app.package_name === item.package_name
+  )?.localIcon;
 
-    if (localIcon) {
-      return (
-        <Image
-          source={localIcon}
-          style={iconStyle}
-          resizeMode="contain"
-        />
-      );
-    }
+  if (localIcon) {
+    return <Image source={localIcon} style={iconStyle} resizeMode="contain" />;
+  }
 
-    return (
-      <Ionicons
-        name="phone-portrait-outline"
-        size={size}
-        color="#888"
-        style={iconStyle}
-      />
-    );
-  };
+  return <Ionicons name="phone-portrait-outline" size={size} color="#888" style={iconStyle} />;
+};
 
   if (!selectedApp) {
     return (
@@ -346,6 +402,8 @@ export const UPIPaymentSelector: React.FC<UPIPaymentSelectorProps> = ({
       </View>
     );
   }
+
+
 
   return (
     <>

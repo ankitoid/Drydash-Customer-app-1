@@ -461,7 +461,7 @@ const makeStyles = (theme: any) => StyleSheet.create({
     letterSpacing: 1.1,
   },
   totalValue: {
-    color: theme.border,
+    color: theme.textSecondary,
     fontSize: 28,
     fontWeight: "900",
   },
