@@ -129,13 +129,13 @@ export const UPIPaymentSelector: React.FC<UPIPaymentSelectorProps> = ({
   // const [installedApps, setInstalledApps] = useState<any[]>([]);
   // const [selectedApp, setSelectedApp] = useState<any>(null);
   const [installedApps] = useState<any[]>([
-  ONLINE_OPTION,
-  COD_OPTION,
-]);
+    ONLINE_OPTION,
+    COD_OPTION,
+  ]);
 
-const [selectedApp, setSelectedApp] = useState<any>(
-  defaultCod ? COD_OPTION : ONLINE_OPTION
-);
+  const [selectedApp, setSelectedApp] = useState<any>(
+    defaultCod ? COD_OPTION : ONLINE_OPTION
+  );
   const [loading, setLoading] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [showCodConfirm, setShowCodConfirm] = useState(false);
@@ -376,23 +376,23 @@ const [selectedApp, setSelectedApp] = useState<any>(
   // };
 
   const renderPaymentIcon = (item: any, size: number = 40) => {
-  const iconStyle = size === 40 ? styles.paymentIcon : styles.otherIcon;
+    const iconStyle = size === 40 ? styles.paymentIcon : styles.otherIcon;
 
-  if (item.isCod) {
-    return <Ionicons name="cash-outline" size={size} color="#555" style={iconStyle} />;
-  }
+    if (item.isCod) {
+      return <Ionicons name="cash-outline" size={size} color="#555" style={iconStyle} />;
+    }
 
-  // item.localIcon exists directly for iOS apps; look it up for Android
-  const localIcon = item.localIcon || SUPPORTED_UPI_APPS.find(
-    app => app.package_name === item.package_name
-  )?.localIcon;
+    // item.localIcon exists directly for iOS apps; look it up for Android
+    const localIcon = item.localIcon || SUPPORTED_UPI_APPS.find(
+      app => app.package_name === item.package_name
+    )?.localIcon;
 
-  if (localIcon) {
-    return <Image source={localIcon} style={iconStyle} resizeMode="contain" />;
-  }
+    if (localIcon) {
+      return <Image source={localIcon} style={iconStyle} resizeMode="contain" />;
+    }
 
-  return <Ionicons name="phone-portrait-outline" size={size} color="#888" style={iconStyle} />;
-};
+    return <Ionicons name="phone-portrait-outline" size={size} color="#888" style={iconStyle} />;
+  };
 
   if (!selectedApp) {
     return (

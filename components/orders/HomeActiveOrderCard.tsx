@@ -597,7 +597,7 @@ const makeStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     fontSize: 16,
   },
   successText: {
-    color: "#9EE8D1",
+     color: theme.primary,
     fontSize: 15,
     fontWeight: "500",
     flex: 1,

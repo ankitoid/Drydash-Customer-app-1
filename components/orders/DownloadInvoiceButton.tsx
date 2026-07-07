@@ -367,9 +367,9 @@ export const DownloadInvoiceButton: React.FC<DownloadInvoiceButtonProps> = ({ or
       activeOpacity={0.7}
     >
       {isDownloading ? (
-        <ActivityIndicator size="small" color="#2FE6A6" style={styles.icon} />
+        <ActivityIndicator size="small" style={styles.icon} />
       ) : (
-        <Ionicons name="download-outline" size={16} color="#2FE6A6" style={styles.icon} />
+        <Ionicons name="download-outline" size={16} style={styles.icon} />
       )}
       <Text style={styles.text}>
         {isDownloading ? "Downloading Invoice..." : "Download Receipt"}
@@ -393,7 +393,7 @@ const makeStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     marginRight: 6,
   },
   text: {
-    color: isDark ? '#2FE6A6' : '#00A374',
+    color: theme.primary,
     fontSize: 12,
     fontWeight: '700',
   }
