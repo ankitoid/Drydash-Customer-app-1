@@ -50,10 +50,29 @@ const SUPPORTED_UPI_APPS = [
 ];
 
 const IOS_UPI_APPS = [
-  { id: 'tez', name: 'Google Pay', scheme: 'tez://', localIcon: require('@/assets/images/icons/google-pay.png') },
-  { id: 'phonepe', name: 'PhonePe', scheme: 'phonepe://', localIcon: require('@/assets/images/icons/phone-pe.png') },
-  { id: 'paytmmp', name: 'Paytm', scheme: 'paytmmp://', localIcon: require('@/assets/images/icons/paytm.png') },
+  {
+    id: null,
+    name: null,
+    scheme: null,
+    localIcon: require('@/assets/images/icons/google-pay.png'),
+    isCod: false,
+  },
+  // {
+  //   id: 'phonepe',
+  //   name: 'PhonePe',
+  //   scheme: 'phonepe://',
+  //   localIcon: require('@/assets/images/icons/phone-pe.png'),
+  //   isCod: false,
+  // },
+  // {
+  //   id: 'paytmmp',
+  //   name: 'Paytm',
+  //   scheme: 'paytmmp://',
+  //   localIcon: require('@/assets/images/icons/paytm.png'),
+  //   isCod: false,
+  // },
 ];
+
 const ONLINE_OPTION = {
   id: 'online',
   name: 'Pay Online',
@@ -128,10 +147,14 @@ export const UPIPaymentSelector: React.FC<UPIPaymentSelectorProps> = ({
   }), [theme, isDark]);
   // const [installedApps, setInstalledApps] = useState<any[]>([]);
   // const [selectedApp, setSelectedApp] = useState<any>(null);
-  const [installedApps] = useState<any[]>([
-    ONLINE_OPTION,
-    COD_OPTION,
-  ]);
+  // const [installedApps] = useState<any[]>([
+  //   ONLINE_OPTION,
+  //   COD_OPTION,
+  // ]);
+  const [installedApps, setInstalledApps] = useState<any[]>([
+  ONLINE_OPTION,
+  COD_OPTION,
+]);
 
   const [selectedApp, setSelectedApp] = useState<any>(
     defaultCod ? COD_OPTION : ONLINE_OPTION
@@ -140,17 +163,73 @@ export const UPIPaymentSelector: React.FC<UPIPaymentSelectorProps> = ({
   const [expanded, setExpanded] = useState(false);
   const [showCodConfirm, setShowCodConfirm] = useState(false);
 
+  // const detectAppsIOS = async () => {
+  //   const checks = await Promise.all(
+  //     IOS_UPI_APPS.map(async (app) => ({
+  //       ...app,
+  //       installed: await Linking.canOpenURL(app.scheme).catch(() => false),
+  //     }))
+  //   );
+  //   const installed = checks.filter(a => a.installed);
+  //   setInstalledApps(installed.length ? installed : IOS_UPI_APPS);
+  //   setSelectedApp(defaultCod ? COD_OPTION : (installed[0] || IOS_UPI_APPS[0]));
+  // };
+
+
   const detectAppsIOS = async () => {
+  try {
     const checks = await Promise.all(
-      IOS_UPI_APPS.map(async (app) => ({
-        ...app,
-        installed: await Linking.canOpenURL(app.scheme).catch(() => false),
-      }))
+      IOS_UPI_APPS.map(async (app) => {
+        const installed = await Linking.canOpenURL(app.scheme).catch(() => false);
+
+        console.log(
+          `UPI APP CHECK: ${app.name} | ${app.scheme} | Installed: ${installed}`
+        );
+
+        return {
+          ...app,
+          installed,
+        };
+      })
     );
-    const installed = checks.filter(a => a.installed);
-    setInstalledApps(installed.length ? installed : IOS_UPI_APPS);
-    setSelectedApp(defaultCod ? COD_OPTION : (installed[0] || IOS_UPI_APPS[0]));
-  };
+
+    const installed = checks.filter((app) => app.installed);
+
+    console.log(
+      'INSTALLED UPI APPS:',
+      installed.map((app) => app.name)
+    );
+
+    setInstalledApps([
+      ONLINE_OPTION,
+      ...installed,
+      COD_OPTION,
+    ]);
+
+    setSelectedApp(
+      defaultCod
+        ? COD_OPTION
+        : installed[0] || ONLINE_OPTION
+    );
+  } catch (error) {
+  //I detection error:', error);
+
+    setInstalledApps([
+      ONLINE_OPTION,
+      COD_OPTION,
+    ]);
+
+    setSelectedApp(
+      defaultCod ? COD_OPTION : ONLINE_OPTION
+    );
+  }
+};
+
+useEffect(() => {
+  if (Platform.OS === 'ios') {
+    detectAppsIOS();
+  }
+}, [defaultCod]);
 
   useEffect(() => {
     if (selectedApp && onPaymentMethodChange) {
